@@ -115,7 +115,7 @@ def handle_messages(message):
 @bot.message_handler(content_types=['text'], func=lambda message: True, chat_types=['group', 'supergroup'])
 def handle_group_messages(message):
     # 检查消息是否由以'bot'结尾的用户名发送或由人类用户发送
-    if (message.from_user.username and message.from_user.username.endswith('bot')) or not message.from_user.is_bot:
+    if (message.from_user.username and message.from_user.username.endswith('EVMTrackerBot')) or not message.from_user.is_bot:
         # 检查消息是否包含ETH或SOL地址
         match_sol = re.search(solana_address_pattern, message.text)
         match_eth = re.search(eth_address_pattern, message.text)
