@@ -1,5 +1,5 @@
 import re
-import os
+import OS
 from telebot import TeleBot, types
 import requests
 import pytz
@@ -114,15 +114,14 @@ def handle_messages(message):
 # 电报机器人监听群组消息的函数
 @bot.message_handler(content_types=['text'], func=lambda message: True, chat_types=['group', 'supergroup'])
 def handle_group_messages(message):
-    # 检查消息是否由以'bot'结尾的用户名发送或由人类用户发送
-    if (message.from_user.username and message.from_user.username.endswith('EVMTrackerBot')) or not message.from_user.is_bot:
-        # 检查消息是否包含ETH或SOL地址
-        match_sol = re.search(solana_address_pattern, message.text)
-        match_eth = re.search(eth_address_pattern, message.text)
-        if match_sol or match_eth:
-            # 如果找到地址，调用get_token_info函数
-            address = match_sol.group() if match_sol else match_eth.group()
-            get_token_info(address, message.chat.id)
+    # 现在这个条件将允许所有消息通过，无论是人类用户还是机器人发送的
+    # 检查消息是否包含ETH或SOL地址
+    match_sol = re.search(solana_address_pattern, message.text)
+    match_eth = re.search(eth_address_pattern, message.text)
+    if match_sol or match_eth:
+        # 如果找到地址，调用get_token_info函数
+        address = match_sol.group() if match_sol else match_eth.group()
+        get_token_info(address, message.chat.id)
 
 # 轮询电报服务器
 bot.polling()
