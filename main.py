@@ -1,5 +1,5 @@
 import re
-import OS
+import os
 from telebot import TeleBot, types
 import requests
 import pytz
