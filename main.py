@@ -1,3 +1,4 @@
+import logging
 import re
 import os
 from telebot import TeleBot, types
@@ -5,6 +6,10 @@ import requests
 import pytz
 from datetime import datetime
 from solders.pubkey import Pubkey
+
+# 配置日志记录
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # 你的电报机器人Token
 bot_token = os.environ['bot_token']
@@ -26,12 +31,14 @@ def validate_solana_address(address):
 
 # 获取涨跌幅信息和社交信息的函数
 def get_token_info(address, chat_id):
+    logger.info(f"正在检测地址: {address}")
     url = f"https://api.dexscreener.com/latest/dex/tokens/{address}"
     response = requests.get(url)
     data = response.json()
 
     # 检查是否有有效的配对数据
     if data.get('pairs') is None:
+        logger.warning(f"未找到地址 {address} 的配对数据")
         # 如果没有有效数据，发送CA地址
         message_content = f"价格检测失败\nCA提取: `{address}`"
         bot.send_message(chat_id=chat_id,
@@ -98,6 +105,7 @@ def get_token_info(address, chat_id):
         bot.send_message(chat_id=chat_id,
                          text=message_content,
                          parse_mode='Markdown')
+        logger.info(f"地址 {address} 的信息已发送至聊天 {chat_id}")
 
 
 # 电报机器人监听函数
@@ -114,14 +122,31 @@ def handle_messages(message):
 # 电报机器人监听群组消息的函数
 @bot.message_handler(content_types=['text'], func=lambda message: True, chat_types=['group', 'supergroup'])
 def handle_group_messages(message):
-    # 现在这个条件将允许所有消息通过，无论是人类用户还是机器人发送的
-    # 检查消息是否包含ETH或SOL地址
-    match_sol = re.search(solana_address_pattern, message.text)
-    match_eth = re.search(eth_address_pattern, message.text)
-    if match_sol or match_eth:
-        # 如果找到地址，调用get_token_info函数
-        address = match_sol.group() if match_sol else match_eth.group()
-        get_token_info(address, message.chat.id)
+    # 检查消息是否包含触发词 'Token'
+    if 'Token' in message.text:
+        logger.info(f"触发词 'Token' 被检测到在消息中: {message.text}")
+        # 检查消息是否由以'bot'结尾的用户名发送
+        if message.from_user.username and message.from_user.username.endswith('bot'):
+            # 检查消息是否包含ETH或SOL地址
+            match_sol = re.search(solana_address_pattern, message.text)
+            match_eth = re.search(eth_address_pattern, message.text)
+            if match_sol or match_eth:
+                # 如果找到地址，调用get_token_info函数
+                address = match_sol.group() if match_sol else match_eth.group()
+                get_token_info(address, message.chat.id)
+                logger.info(f"从机器人消息中识别出地址: {address}")
+            else:
+                logger.info("消息中未检测到有效地址")
+        else:
+            logger.info("消息不是由机器人发送的")
+    else:
+        logger.info("消息中未检测到触发词 'Token'")
 
 # 轮询电报服务器
-bot.polling()
+if __name__ == "__main__":
+    logger.info("机器人启动")
+    try:
+        bot.polling()
+    except Exception as e:
+        logger.error(f"机器人运行错误: {e}")
+    logger.info("机器人停止")
