@@ -1,5 +1,5 @@
 import re
-import os
+import OS
 from telebot import TeleBot, types
 import requests
 import pytz
@@ -32,7 +32,11 @@ def get_token_info(address, chat_id):
 
     # 检查是否有有效的配对数据
     if data.get('pairs') is None:
-        # 如果没有有效数据，不执行任何操作
+        # 如果没有有效数据，发送CA地址
+        message_content = f"价格检测失败\nCA提取: `{address}`"
+        bot.send_message(chat_id=chat_id,
+                         text=message_content,
+                         parse_mode='Markdown')
         return
 
     # 获取第一个配对的数据
