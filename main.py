@@ -1,3 +1,4 @@
+import sqlite3
 import re
 import os
 from telebot import TeleBot, types
@@ -103,6 +104,15 @@ def get_token_info(address, chat_id):
 # 电报机器人监听函数
 @bot.message_handler(func=lambda message: True)
 def handle_messages(message):
+    # 在这个线程中创建一个新的数据库连接
+    conn = sqlite3.connect('messages.db')
+    c = conn.cursor()
+
+    # 将消息存储在数据库中
+    c.execute("INSERT INTO messages VALUES (?, ?, ?)",
+              (message.chat.id, message.text, message.date))
+    conn.commit()
+
     # 检查消息是否包含ETH或SOL地址
     match_sol = re.search(solana_address_pattern, message.text)
     match_eth = re.search(eth_address_pattern, message.text)
@@ -114,7 +124,15 @@ def handle_messages(message):
 # 电报机器人监听群组消息的函数
 @bot.message_handler(content_types=['text'], func=lambda message: True, chat_types=['group', 'supergroup'])
 def handle_group_messages(message):
-    # 现在这个条件将允许所有消息通过，无论是人类用户还是机器人发送的
+    # 在这个线程中创建一个新的数据库连接
+    conn = sqlite3.connect('messages.db')
+    c = conn.cursor()
+
+    # 将消息存储在数据库中
+    c.execute("INSERT INTO messages VALUES (?, ?, ?)",
+              (message.chat.id, message.text, message.date))
+    conn.commit()
+
     # 检查消息是否包含ETH或SOL地址
     match_sol = re.search(solana_address_pattern, message.text)
     match_eth = re.search(eth_address_pattern, message.text)
