@@ -8,13 +8,26 @@ from datetime import datetime
 from solders.pubkey import Pubkey
 
 # 你的电报机器人Token
-bot_token = os.environ['bot_token']
+bot_token = os.environ['TGbot_token']
 bot = TeleBot(bot_token)
 
 # Solana和Ethereum地址的正则表达式模式
 solana_address_pattern = r'[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}'
 eth_address_pattern = r'0x[a-fA-F0-9]{40}'
 
+# 在这个线程中创建一个新的数据库连接
+conn = sqlite3.connect('messages.db')
+c = conn.cursor()
+
+# 创建表
+c.execute("""
+CREATE TABLE IF NOT EXISTS messages (
+    chat_id INTEGER,
+    message_text TEXT,
+    message_date INTEGER
+)
+""")
+conn.commit()
 
 # Solana地址验证函数
 def validate_solana_address(address):
