@@ -6,10 +6,11 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12"
+requests = "^2.32.3"
+solders = "^0.21.0"
+apscheduler = "^3.10.4"
 pytelegrambotapi = "^4.18.1"
 pytz = "^2024.1"
-requests = "^2.32.1"
-solders = "^0.21.0"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md
