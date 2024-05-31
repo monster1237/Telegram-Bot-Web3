@@ -10,7 +10,7 @@ pytelegrambotapi = "^4.18.1"
 pytz = "^2024.1"
 requests = "^2.32.1"
 solders = "^0.21.0"
-apscheduler = "^3.9.1"  # 安装 apscheduler
+apscheduler
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md
