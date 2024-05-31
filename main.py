@@ -1,11 +1,13 @@
 import sqlite3
 import re
 import os
+import time
 from telebot import TeleBot, types
 import requests
 import pytz
 from datetime import datetime
 from solders.pubkey import Pubkey
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # 你的电报机器人Token
 bot_token = os.environ['TGbot_token']
@@ -15,8 +17,11 @@ bot = TeleBot(bot_token)
 solana_address_pattern = r'[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}'
 eth_address_pattern = r'0x[a-fA-F0-9]{40}'
 
+# 数据库文件路径
+db_file = 'messages.db'
+
 # 在这个线程中创建一个新的数据库连接
-conn = sqlite3.connect('messages.db')
+conn = sqlite3.connect(db_file)
 c = conn.cursor()
 
 # 创建表
@@ -103,16 +108,43 @@ def get_token_info(address, chat_id):
                       f"**社交**:\n{social_info}\n" \
                       f"**网址**: {pair_data.get('url', '无')}"
     token_image_url = pair_data.get('info', {}).get('imageUrl', '')
+
+    # 打印图片链接以检查
+    print(f"图片链接: {token_image_url}")
+
     if token_image_url:
-        bot.send_photo(chat_id=chat_id,
-                       photo=token_image_url,
-                       caption=message_content,
-                       parse_mode='Markdown')
+        try:
+            response = requests.get(token_image_url)
+            response.raise_for_status()  # 检查图片链接是否有效
+            bot.send_photo(chat_id=chat_id,
+                           photo=token_image_url,
+                           caption=message_content,
+                           parse_mode='Markdown')
+        except requests.exceptions.RequestException as e:
+            print(f"获取图片失败: {e}")
+            bot.send_message(chat_id=chat_id,
+                             text=message_content,
+                             parse_mode='Markdown')
     else:
         bot.send_message(chat_id=chat_id,
                          text=message_content,
                          parse_mode='Markdown')
 
+
+# 清空数据库并发送数据库文件
+def clear_database(chat_id):
+    global conn, c
+    conn.execute("DELETE FROM messages")
+    conn.commit()
+
+    # 发送数据库文件
+    with open(db_file, 'rb') as f:
+        bot.send_document(chat_id=chat_id, data=f)
+
+    # 关闭数据库连接并重新创建
+    conn.close()
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
 
 # 电报机器人监听函数
 @bot.message_handler(func=lambda message: True)
@@ -154,5 +186,24 @@ def handle_group_messages(message):
         address = match_sol.group() if match_sol else match_eth.group()
         get_token_info(address, message.chat.id)
 
+# 处理用户发送的指令
+@bot.message_handler(commands=['clear'])
+def handle_clear_command(message):
+    if message.from_user.username in ['Xijingping125']:
+        clear_database(message.chat.id)
+        bot.send_message(chat_id=message.chat.id,
+                         text="数据库已清空并发送文件！")
+    else:
+        bot.send_message(chat_id=message.chat.id,
+                         text="你没有权限执行此命令！")
+
+# 使用 APScheduler 定时清空数据库
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=lambda: clear_database(chat_id='@Xijingping125'), 
+                   trigger='cron', 
+                   hour='0', 
+                   minute='0')  # 每天凌晨 0 点执行
+scheduler.start()
+
 # 轮询电报服务器
-bot.polling()
+bot.polling(none_stop=True)
