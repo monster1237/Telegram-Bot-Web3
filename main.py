@@ -8,8 +8,6 @@ import pytz
 from datetime import datetime
 from solders.pubkey import Pubkey
 from apscheduler.schedulers.background import BackgroundScheduler
-import sys
-!{sys.executable} -m pip install apscheduler
 
 # 你的电报机器人Token
 bot_token = os.environ['TGbot_token']
